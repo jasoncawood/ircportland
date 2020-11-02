@@ -9,6 +9,7 @@ class PdxAlerts:
         self.latest_tweet_date = start_date
         self.channel = channel
         self.token = token
+        self.bearer_token = None
         self.token_url = 'https://api.twitter.com/oauth2/token'
         self.username = "pdxalerts"
         self.twitter_url = 'https://api.twitter.com/1.1/statuses/user_timeline.json?count=10&screen_name='
@@ -41,7 +42,9 @@ class PdxAlerts:
 
     def get_alerts(self):
         url = self.twitter_url + self.username
-        headers = {"Authorization": 'Bearer ' + self.get_bearer_token()['access_token']}
+        if self.bearer_token is None:
+            self.bearer_token = self.get_bearer_token()['access_token']
+        headers = {"Authorization": 'Bearer ' + self.bearer_token}
         r = requests.get(url, headers=headers)
         return r.json()
 
@@ -49,6 +52,9 @@ class PdxAlerts:
         tweets = [];
         format = '%a %b %d %H:%M:%S +0000 %Y'
         for item in response:
-            tweet = {'id': item['id'], 'text': item['text'], 'date': datetime.datetime.strptime(item['created_at'], format), 'url': 'https://twitter.com/pdxalerts/status/{}'.format(item['id'])}
-            tweets.append(tweet)
+            try:
+                tweet = {'id': item['id'], 'text': item['text'], 'date': datetime.datetime.strptime(item['created_at'], format), 'url': 'https://twitter.com/pdxalerts/status/{}'.format(item['id'])}
+                tweets.append(tweet)
+            except TypeError:
+                pass
         return tweets
